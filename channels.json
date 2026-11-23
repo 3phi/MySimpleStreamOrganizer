@@ -58,7 +58,6 @@
     {"handle": "@BenjaminJaworskyj", "id": "UCd-3cAoPoDrw9LBJmXVB20g", "name": "Benjamin Jaworskyj", "category": "foto", "status": "suggested", "reason": "Natur- & Tierfotografie – passt zu Simon d'Entremont"},
     {"handle": "@CuivTheLazyGeek", "id": "UC65vvpQDX5rymeqrYt-Bb1g", "name": "Cuiv, The Lazy Geek", "category": "foto", "status": "suggested", "reason": "Astrofoto-Technik – passt zu Nebula Photos & AstroBackyard"},
     {"handle": "@KrolopGerst", "id": "UCFaGFYoav4S3eGk1Z55Kmww", "name": "KROLOP & GERST", "category": "foto", "status": "suggested", "reason": "Foto-Equipment auf Deutsch – passt zu ValueTech"},
-    {"handle": "@JonasWinkler", "id": "UCy2Vejpl6vpeJi_hsUt9p0Q", "name": "Jonas Winkler", "category": "maker", "status": "suggested", "reason": "Deutscher Maker mit viel 3D-Druck – passt zu mpoxDE"},
     {"handle": "@LauraKampf", "id": "UCRix1GJvSBNDpEFY561eSzw", "name": "Laura Kampf", "category": "maker", "status": "suggested", "reason": "Werkstatt & Design – passt zu Alexandre Chappel"},
     {"handle": "@MakersMuse", "id": "UCxQbYGpbdrh-b2ND-AfIybg", "name": "Maker's Muse", "category": "maker", "status": "suggested", "reason": "3D-Druck-Design – passt zu CNC Kitchen"},
     {"handle": "@StuffMadeHere", "id": "UCj1VqrHhDte54oLgPG4xpuQ", "name": "Stuff Made Here", "category": "maker", "status": "suggested", "reason": "Ingenieursprojekte – passt zu Colin Furze"},
@@ -67,6 +66,7 @@
     {"handle": "@GameTwo", "id": "UCFBapHA35loZ3KZwT_z3BsQ", "name": "Game Two", "category": "gaming", "status": "suggested", "reason": "Gaming-Talk auf Deutsch – passt zu GameStar & PC Games"},
     {"handle": "@Finanztip", "id": "UC-muQylmRx61Mt6U1oDSEVA", "name": "Finanztip", "category": "gesellschaft", "status": "suggested", "reason": "Verbraucher- & Finanzwissen – passt zu Finanzfluss"},
     {"handle": "@Simplicissimus", "id": "UCKGMHVipEvuZudhHD05FOYA", "name": "Simplicissimus", "category": "gesellschaft", "status": "suggested", "reason": "Erklärvideos zu Wirtschaft & Gesellschaft"},
-    {"handle": "@ZDFMagazinRoyale", "id": "UCNNEMxGKV1LsKZRt4vaIbvw", "name": "ZDF MAGAZIN ROYALE", "category": "gesellschaft", "status": "suggested", "reason": "Satire mit Recherche – deutsches Pendant zu Last Week Tonight"}
+    {"handle": "@ZDFMagazinRoyale", "id": "UCNNEMxGKV1LsKZRt4vaIbvw", "name": "ZDF MAGAZIN ROYALE", "category": "gesellschaft", "status": "suggested", "reason": "Satire mit Recherche – deutsches Pendant zu Last Week Tonight"},
+    {"handle": "@JonasWinkler", "id": "UCy2Vejpl6vpeJi_hsUt9p0Q", "name": "Jonas Winkler", "category": "maker", "status": "rejected", "reason": "Deutscher Maker mit viel 3D-Druck – passt zu mpoxDE"}
   ]
 }
