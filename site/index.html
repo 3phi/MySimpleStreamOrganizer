@@ -68,14 +68,17 @@
   .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     color: var(--fg); text-decoration: none; font-size: 14px; font-weight: 500; margin-top: 1px; }
   .sub { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .sub button { font-size: 11px; padding: 1px 8px; }
   .why { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 2px; }
   .err { font-size: 12px; color: var(--warn); margin-top: 2px; }
-  .acts { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-  .acts button { font-size: 12px; padding: 4px 9px; }
+  .acts { display: flex; gap: 8px; margin-top: 8px; }
+  .acts button { flex: 1; font-size: 14px; padding: 8px 10px; border-radius: 10px; }
   .acts .yes { background: color-mix(in srgb, var(--ok) 25%, var(--chip)); }
   .acts .no { background: color-mix(in srgb, var(--accent) 22%, var(--chip)); }
-  .more { background: none; color: var(--muted); padding: 2px 4px; font-size: 18px; line-height: 1; }
+  .side { flex: none; width: 46px; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+  .side button { flex: 1 1 0; width: 100%; min-height: 29px; max-height: 52px; padding: 0; border-radius: 10px;
+    font-size: 15px; font-weight: 600; color: var(--fg); background: var(--chip); }
+  .side .more { font-size: 20px; line-height: 1; }
+  .side button[aria-expanded="true"] { background: var(--fg); color: var(--bg); }
   .item.seen .th img { opacity: .5; }
   .item.pending { opacity: .6; }
   .older { margin: 6px 0 0 122px; display: grid; gap: 6px; min-width: 0; }
@@ -171,6 +174,7 @@
   let seen = store.get("seen", {});                  // channelId -> zuletzt angetippte neueste Video-ID
   let ops = store.get("pendingOps", {});             // key -> {id?, handle?, status?, category?, tries}
   let scopesReq = store.get("pendingScopes", {});    // scope -> {before}
+  const expanded = new Set();
   let flushTimer = null, polling = false, lastDispatch = 0, toastTimer = null, undoFn = null;
 
   const saveOps = () => { store.set("pendingOps", ops); store.set("pendingScopes", scopesReq); };
@@ -234,7 +238,7 @@
     // Werkzeuge
     const sort = sorts[view] || "new";
     $("#tools").innerHTML = [
-      view !== "rejected" ? `<button id="sortBtn">↕ ${SORTS[sort]}</button>` : "",
+      view !== "rejected" ? `<button id="sortBtn">↕︎ ${SORTS[sort]}</button>` : "",
       view === "active" ? `<button id="onlyNewBtn" aria-pressed="${onlyNew}">Nur ungesehen</button><button id="markAll">Alle gesehen</button>` : "",
       `${view !== "rejected" ? '<span class="sep"></span>' : ""}<button id="searchBtn" aria-pressed="${!$("#q").hidden}">Suchen</button>`,
     ].join("");
@@ -279,9 +283,14 @@
     const v = latest(c);
     const d = vidsOf(c);
     const name = esc(c.name || c.handle);
-    const chUrl = c.id ? `https://www.youtube.com/channel/${encodeURIComponent(c.id)}/videos` : "#";
+    const chUrl = c.id ? `https://www.youtube.com/channel/${encodeURIComponent(c.id)}/videos` : "";
+    const nameHtml = chUrl ? `<a class="name" href="${chUrl}" target="_blank" rel="noopener noreferrer">${name}</a>` : `<span class="name">${name}</span>`;
     const fresh = view === "active" && isNew(c);
     const more = `<button class="more" data-more="${k}" aria-label="Aktionen für ${name}">⋯</button>`;
+    const older = (d?.videos || []).slice(1);
+    const open = expanded.has(keyOf(c));
+    const side = `<div class="side">${more}${view !== "rejected" && older.length
+      ? `<button data-older="${k}" aria-expanded="${open}" aria-label="${older.length} ältere Videos">${open ? "▲" : "+" + older.length}</button>` : ""}</div>`;
     const acts = {
       suggested: `<div class="acts"><button class="yes" data-set="active" data-k="${k}">✓ Übernehmen</button><button class="no" data-set="rejected" data-k="${k}">✕ Ablehnen</button></div>`,
       parked: `<div class="acts"><button class="yes" data-set="active" data-k="${k}">In den Feed</button></div>`,
@@ -294,23 +303,23 @@
 
     if (view === "rejected") {
       return `<article class="item compact ${c.pending ? "pending" : ""}"><div class="row"><div class="body">
-        <div class="ch"><a class="name" href="${chUrl}">${name}</a><span>${esc(catLabel(c.category))}</span></div>${acts}</div>${more}</div></article>`;
+        <div class="ch">${nameHtml}<span>${esc(catLabel(c.category))}</span></div></div>${side}</div>${acts}</article>`;
     }
-    const older = (d?.videos || []).slice(1);
     const thumbHtml = v
-      ? `<a class="th" href="${watch(v.id)}" data-v="${esc(v.id)}" data-ch="${esc(c.id)}"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>`
-      : `<a class="th" href="${chUrl}">${c.placeholder ? "…" : "nicht geladen"}</a>`;
+      ? `<a class="th" href="${watch(v.id)}" target="_blank" rel="noopener noreferrer" data-v="${esc(v.id)}" data-ch="${esc(c.id)}"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>`
+      : chUrl ? `<a class="th" href="${chUrl}" target="_blank" rel="noopener noreferrer">nicht geladen</a>` : `<span class="th">…</span>`;
     return `<article class="item ${view === "active" && !fresh ? "seen" : ""} ${c.pending ? "pending" : ""}">
       <div class="row">${thumbHtml}
         <div class="body">
-          <div class="ch"><a class="name" href="${chUrl}">${name}</a>${fresh ? '<span class="badge">NEU</span>' : ""}</div>
-          ${v ? `<a class="title" href="${watch(v.id)}" data-v="${esc(v.id)}" data-ch="${esc(c.id)}">${esc(v.title)}</a>
-          <div class="sub"><span>${views(v.views)}${ago(v.published)}</span>${older.length ? `<button data-older>+${older.length}</button>` : ""}</div>`
+          <div class="ch">${nameHtml}${fresh ? '<span class="badge">NEU</span>' : ""}</div>
+          ${v ? `<a class="title" href="${watch(v.id)}" target="_blank" rel="noopener noreferrer" data-v="${esc(v.id)}" data-ch="${esc(c.id)}">${esc(v.title)}</a>
+          <div class="sub"><span>${views(v.views)}${ago(v.published)}</span></div>`
           : `<div class="sub">${view === "active" ? "Noch keine Videos geladen" : "Videos werden nur bei Bedarf geladen (↻)"}</div>`}
-          ${why}${note}${acts}
-        </div>${more}
+          ${why}${note}
+        </div>${side}
       </div>
-      ${older.length ? `<div class="older" hidden>${older.map((o) => `<a href="${watch(o.id)}"><img loading="lazy" src="${thumb(o.id)}" alt="">
+      ${acts}
+      ${older.length ? `<div class="older" ${open ? "" : "hidden"}>${older.map((o) => `<a href="${watch(o.id)}" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="${thumb(o.id)}" alt="">
         <div><div class="title">${esc(o.title)}</div><div class="meta">${ago(o.published)}</div></div></a>`).join("")}</div>` : ""}
     </article>`;
   }
@@ -378,11 +387,12 @@
   async function poll() {
     if (polling) return;
     polling = true;
-    while (Object.keys(ops).length || Object.keys(scopesReq).length) {
-      if (Date.now() - lastDispatch > POLL_MAX_MS) break;
+    const pending = () => Object.keys(ops).length || Object.keys(scopesReq).length;
+    while (pending()) {
       setStatus(`${describePending()} … ${Math.round((Date.now() - lastDispatch) / 1000)} s`);
       await sleep(POLL_MS);
       try { data = await fetchData(); reconcile(); render(); } catch {}
+      if (Date.now() - lastDispatch > POLL_MAX_MS) break;
     }
     polling = false;
     $("#reload").classList.remove("spin");
@@ -427,7 +437,7 @@
       ${others.map((s) => `<button data-sheet-set="${s}">${STATUS_LABEL[s]}</button>`).join("")}
       <select id="sheetCat" aria-label="Kategorie">${data.config.categories.map((k) =>
         `<option value="${k.id}" ${k.id === c.category ? "selected" : ""}>Kategorie: ${esc(k.label)}</option>`).join("")}</select>
-      ${c.id ? `<a class="btn" href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}/videos">Kanal auf YouTube öffnen</a>` : ""}
+      ${c.id ? `<a class="btn" href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}/videos" target="_blank" rel="noopener noreferrer">Kanal auf YouTube öffnen</a>` : ""}
       <button data-sheet-close>Abbrechen</button>`;
     $("#sheet").hidden = false;
     $("#sheetCard").onclick = (e) => {
@@ -464,9 +474,16 @@
     if (set) { const c = byKey(set.dataset.k); if (c) setChannel(c, { status: set.dataset.set }); return; }
     const more = t.closest("[data-more]");
     if (more) { const c = byKey(more.dataset.more); if (c) openSheet(c); return; }
-    if (t.closest("[data-older]")) { const box = t.closest(".item").querySelector(".older"); if (box) box.hidden = !box.hidden; return; }
+    const ob = t.closest("[data-older]");
+    if (ob) {
+      const box = ob.closest(".item").querySelector(".older"); if (!box) return;
+      const open = box.hidden; box.hidden = !open;
+      open ? expanded.add(ob.dataset.older) : expanded.delete(ob.dataset.older);
+      ob.setAttribute("aria-expanded", open); ob.textContent = open ? "▲" : "+" + box.children.length;
+      return;
+    }
     const a = t.closest("a[data-v]");            // Video geöffnet -> als gesehen markieren (gleicher Tab)
-    if (a && view === "active") { seen[a.dataset.ch] = a.dataset.v; store.set("seen", seen); }
+    if (a && view === "active") { seen[a.dataset.ch] = a.dataset.v; store.set("seen", seen); setTimeout(render, 60); }   // Video öffnet im neuen Tab, diese Seite bleibt
   });
   $("#sheet").addEventListener("click", (e) => { if (e.target.id === "sheet") $("#sheet").hidden = true; });
   $("#toastUndo").addEventListener("click", () => { $("#toast").hidden = true; const f = undoFn; undoFn = null; if (f) f(); });
@@ -514,6 +531,13 @@
     if (!e.persisted || !data) return;
     seen = store.get("seen", {}); render();
     if (stale() && !scopesReq.active && store.get("ghToken", "")) requestScope("active");
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || !data) return;
+    seen = store.get("seen", {}); render();
+    if (polling) return;                                             // laufende Bestätigung holt selbst nach
+    if (stale() && !scopesReq.active && store.get("ghToken", "")) requestScope("active");
+    else if (Object.keys(ops).length || Object.keys(scopesReq).length) scheduleFlush(500);
   });
   start();
 })();
