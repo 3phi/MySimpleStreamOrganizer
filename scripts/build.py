@@ -30,6 +30,10 @@ FETCHABLE = ("active", "suggested", "parked")       # "rejected" wird nie gelade
 VIDEOS_PER_CHANNEL = 5
 MAX_OPS = 300
 WORKERS = 6
+# Schutz vor zu häufigem Abrufen – greift serverseitig, egal wer den Lauf auslöst
+MIN_FETCH_INTERVAL_MIN = int(os.environ.get("MIN_FETCH_INTERVAL_MIN", "10"))  # pro Gruppe
+MAX_NEW_PER_RUN = 10      # neue Kanäle pro Lauf
+MAX_CHANNELS = 300        # Obergrenze gesamt
 
 ID_RE = re.compile(r"^UC[\w-]{22}$")
 HANDLE_RE = re.compile(r"^@[\w.\-]{3,30}$")
@@ -43,7 +47,7 @@ HEADERS = {
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 def log(*a):
@@ -155,6 +159,7 @@ def apply_ops(cfg: dict, raw: str) -> bool:
     by_id = {c["id"]: c for c in cfg["channels"] if c.get("id")}
     by_handle = {c["handle"].lower(): c for c in cfg["channels"] if c.get("handle")}
     changed = False
+    added = 0
     for op in ops[:MAX_OPS]:
         if not isinstance(op, dict):
             continue
@@ -172,6 +177,10 @@ def apply_ops(cfg: dict, raw: str) -> bool:
         if ch is None:
             if not handle and not cid:
                 continue
+            if added >= MAX_NEW_PER_RUN or len(cfg["channels"]) >= MAX_CHANNELS:
+                log(f"LIMIT   {handle or cid} nicht hinzugefügt (max. {MAX_NEW_PER_RUN}/Lauf, {MAX_CHANNELS} gesamt)")
+                continue
+            added += 1
             ch = {"handle": handle, "id": cid, "category": category or cfg["categories"][-1]["id"],
                   "status": status or "active"}
             cfg["channels"].append(ch)
@@ -213,6 +222,13 @@ def resolve_missing(cfg: dict) -> bool:
 
 
 # ---------------------------------------------------------------- Ablauf
+def minutes_since(iso) -> float:
+    try:
+        return (datetime.now(timezone.utc) - datetime.fromisoformat(iso)).total_seconds() / 60
+    except Exception:  # noqa: BLE001
+        return float("inf")
+
+
 def parse_scope(raw: str) -> set[str]:
     parts = {p.strip().lower() for p in (raw or "active").split(",") if p.strip()}
     if "all" in parts:
@@ -236,8 +252,17 @@ def main() -> int:
     prev_videos = prev.get("videos", {}) if isinstance(prev, dict) else {}
     scopes = prev.get("scopes", {}) if isinstance(prev, dict) else {}
 
-    targets = [c for c in cfg["channels"] if c.get("id") and c["status"] in scope]
-    log(f"Abruf: {', '.join(sorted(scope)) or '–'} ({len(targets)} Kanäle)")
+    # Drossel: Gruppen, die vor weniger als MIN_FETCH_INTERVAL_MIN Minuten geladen wurden, nicht erneut abrufen.
+    # Ausnahme: Kanäle ohne jegliche Daten (z. B. gerade hinzugefügt) – begrenzt durch MAX_NEW_PER_RUN.
+    throttled = set()
+    for s in scope:
+        age = minutes_since(scopes.get(s, {}).get("at"))
+        if age < MIN_FETCH_INTERVAL_MIN:
+            throttled.add(s)
+            log(f"{s}: gedrosselt – zuletzt vor {age:.1f} Min. geladen (Minimum {MIN_FETCH_INTERVAL_MIN})")
+    targets = [c for c in cfg["channels"] if c.get("id") and c["status"] in scope
+               and (c["status"] not in throttled or not prev_videos.get(c["id"], {}).get("videos"))]
+    log(f"Abruf: {', '.join(sorted(scope - throttled)) or '–'} ({len(targets)} Kanäle)")
 
     def work(ch):
         try:
@@ -252,10 +277,10 @@ def main() -> int:
     for cid, entry in prev_videos.items():
         if cid in live_ids:
             videos[cid] = entry
-    stats = {s: {"ok": 0, "failed": 0} for s in scope}
+    stats: dict[str, dict] = {}
     with ThreadPoolExecutor(WORKERS) as ex:
         for ch, name, vids, err in ex.map(work, targets):
-            s = stats[ch["status"]]
+            s = stats.setdefault(ch["status"], {"ok": 0, "failed": 0})
             if err:
                 s["failed"] += 1
                 log(f"FEHLER  {ch.get('name') or ch['handle']}: {err[:150]}")
@@ -267,9 +292,13 @@ def main() -> int:
             if name and not ch.get("name"):
                 ch["name"] = name
                 changed = True
-    for s, st in stats.items():
-        scopes[s] = {"at": stamp, **st}
-        log(f"{s}: {st['ok']} ok, {st['failed']} Fehler")
+    for s in scope:
+        st = stats.get(s, {"ok": 0, "failed": 0})
+        if s in throttled:   # "checked" zeigt der Seite, dass der Lauf fertig ist; "at" bleibt der letzte echte Abruf
+            scopes[s] = {**scopes.get(s, {}), "checked": stamp, "throttled": True}
+        else:
+            scopes[s] = {"at": stamp, "checked": stamp, **st, "throttled": False}
+            log(f"{s}: {st['ok']} ok, {st['failed']} Fehler")
 
     if changed:
         save_config(cfg)
@@ -277,7 +306,8 @@ def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     public_cfg = {"categories": cfg["categories"],
                   "channels": [{k: v for k, v in c.items()} for c in cfg["channels"]]}
-    OUT.write_text(json.dumps({"generated": stamp, "scopes": scopes, "config": public_cfg, "videos": videos},
+    OUT.write_text(json.dumps({"generated": stamp, "scopes": scopes, "limits": {"minFetchIntervalMin": MIN_FETCH_INTERVAL_MIN},
+                               "config": public_cfg, "videos": videos},
                               ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     log(f"-> {OUT} ({OUT.stat().st_size // 1024} KB)")
     return 0
