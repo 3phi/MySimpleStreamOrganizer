@@ -43,6 +43,7 @@
     {"handle": "@gamestar", "id": "UC6C1dyHHOMVIBAze8dWfqCw", "name": "GameStar", "category": "gaming", "status": "active"},
     {"handle": "@pcgamesde", "id": "UCWVmTAYeA--m-6MDNsxp4Ow", "name": "PC Games", "category": "gaming", "status": "active"},
     {"handle": "@Finanzfluss", "id": "UCeARcCUiZg79SQQ-2_XNlXQ", "name": "Finanzfluss", "category": "gesellschaft", "status": "active"},
+    {"handle": "@Finanztip", "id": "UC-muQylmRx61Mt6U1oDSEVA", "name": "Finanztip", "category": "gesellschaft", "status": "active"},
     {"handle": "@LastWeekTonight", "id": "UC3XTzVzaHQEd30rQbuvCtTQ", "name": "LastWeekTonight", "category": "gesellschaft", "status": "active"},
     {"handle": "@der8auer", "id": "UCYAg4bYdyqENxEyHUX7t1FA", "name": "der8auer", "category": "tech", "status": "suggested", "reason": "PC-Hardware auf Deutsch – passt zu c't 3003 & LTT"},
     {"handle": "@EverythingSmartHome", "id": "UCrVLgIniVg6jW38uVqDRIiQ", "name": "Everything Smart Home", "category": "tech", "status": "suggested", "reason": "Home Assistant: Neuerungen & Projekte"},
@@ -64,7 +65,6 @@
     {"handle": "@NoclipDocs", "id": "UC0fDG3byEcMtbOqPMymDNbw", "name": "/noclip", "category": "gaming", "status": "suggested", "reason": "Dokus über Spieleentwicklung"},
     {"handle": "@DigitalFoundry", "id": "UC9PBzalIcEQCsiIkq36PyUA", "name": "Digital Foundry", "category": "gaming", "status": "suggested", "reason": "Technik-Analysen von Spielen – passt zu GameStar & LTT"},
     {"handle": "@GameTwo", "id": "UCFBapHA35loZ3KZwT_z3BsQ", "name": "Game Two", "category": "gaming", "status": "suggested", "reason": "Gaming-Talk auf Deutsch – passt zu GameStar & PC Games"},
-    {"handle": "@Finanztip", "id": "UC-muQylmRx61Mt6U1oDSEVA", "name": "Finanztip", "category": "gesellschaft", "status": "suggested", "reason": "Verbraucher- & Finanzwissen – passt zu Finanzfluss"},
     {"handle": "@Simplicissimus", "id": "UCKGMHVipEvuZudhHD05FOYA", "name": "Simplicissimus", "category": "gesellschaft", "status": "suggested", "reason": "Erklärvideos zu Wirtschaft & Gesellschaft"},
     {"handle": "@ZDFMagazinRoyale", "id": "UCNNEMxGKV1LsKZRt4vaIbvw", "name": "ZDF MAGAZIN ROYALE", "category": "gesellschaft", "status": "suggested", "reason": "Satire mit Recherche – deutsches Pendant zu Last Week Tonight"},
     {"handle": "@JonasWinkler", "id": "UCy2Vejpl6vpeJi_hsUt9p0Q", "name": "Jonas Winkler", "category": "maker", "status": "rejected", "reason": "Deutscher Maker mit viel 3D-Druck – passt zu mpoxDE"}
