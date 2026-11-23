@@ -1,8 +1,14 @@
 # MySimpleStreamOrganizer
 
 Statische Seite: pro Kanal das neueste Video mit Thumbnail, dazu 4 ältere zum Aufklappen.
-Ein GitHub-Action-Job holt alle 30 Min. die öffentlichen RSS-Feeds (kein API-Key, kein Login)
-und veröffentlicht `feed.json` + `index.html` auf GitHub Pages.
+Abruf nur bei Bedarf: Die Seite löst per ↻ (oder automatisch beim Öffnen, wenn die Daten älter
+als 60 Min. sind) den GitHub-Workflow aus. Der holt die öffentlichen RSS-Feeds (kein YouTube-Login)
+und veröffentlicht `feed.json` neu – Dauer ca. 20–60 s. Kein Cron.
+
+### Token für den Abruf (einmalig pro Gerät)
+GitHub → Settings → Developer settings → Fine-grained tokens → Generate:
+Repository access „Only select repositories“ → dieses Repo; Permissions → Actions: **Read and write**
+(sonst nichts). Token auf der Seite unter ⚙︎ eintragen. Er liegt nur im localStorage des Browsers.
 
 ## Setup (ca. 5 Min.)
 1. Neues Repo auf GitHub anlegen, Inhalt dieses Ordners pushen (Branch `main`).

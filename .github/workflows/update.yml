@@ -1,11 +1,10 @@
 name: Feeds aktualisieren & deployen
 
+# Kein Cron mehr: Die Seite löst den Abruf selbst aus (Button oder beim Öffnen, wenn Daten > 60 Min. alt).
 on:
-  schedule:
-    - cron: "17,47 * * * *"   # alle 30 Min. (GitHub verzögert Cron-Jobs oft um einige Minuten)
   push:
     branches: [main]
-  workflow_dispatch:          # manuell über den Actions-Tab
+  workflow_dispatch:
 
 permissions:
   contents: read
