@@ -1,19 +1,31 @@
 name: Feeds aktualisieren & deployen
 
-# Kein Cron mehr: Die Seite löst den Abruf selbst aus (Button oder beim Öffnen, wenn Daten > 60 Min. alt).
+# Kein Cron. Die Seite startet Läufe selbst: per ↻, beim Öffnen (Feed > 60 Min. alt)
+# und wenn du Kanäle verschiebst (Übernehmen, Ablehnen, Parken …).
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "Abzurufende Gruppen: active, suggested, parked (kommagetrennt), all oder none"
+        type: string
+        default: active
+      ops:
+        description: "Status-/Kategorie-Änderungen als JSON (setzt die Seite automatisch)"
+        type: string
+        default: ""
 
 permissions:
-  contents: read
+  contents: write   # Änderungen an channels.json zurückschreiben
   pages: write
   id-token: write
 
+# Läufe nie abbrechen. GitHub ersetzt einen *wartenden* Lauf durch einen neueren –
+# deshalb schickt die Seite immer alle noch unbestätigten Änderungen mit.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-deploy:
@@ -23,15 +35,41 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Feeds holen
-        run: python scripts/fetch_feeds.py
+      - id: pages
+        uses: actions/configure-pages@v5
 
-      - uses: actions/configure-pages@v5
+      - name: Bisherigen Stand von der Live-Seite holen
+        env:
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: curl -fsS --max-time 20 "$BASE_URL/data.json?run=$GITHUB_RUN_ID" -o prev.json || echo '{}' > prev.json
+
+      - name: Änderungen anwenden & Feeds holen
+        env:
+          # Eingaben nur über Umgebungsvariablen – nie direkt ins Skript interpolieren
+          SCOPE: ${{ inputs.scope || 'active' }}
+          OPS: ${{ inputs.ops }}
+          PREV: prev.json
+        run: python scripts/build.py
+
+      - name: channels.json zurückschreiben
+        run: |
+          if git diff --quiet -- channels.json; then echo "Keine Konfig-Änderung"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Kanalstatus aktualisiert" -- channels.json
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          echo "::error::Push von channels.json fehlgeschlagen"
+          exit 1
 
       - uses: actions/upload-pages-artifact@v3
         with:

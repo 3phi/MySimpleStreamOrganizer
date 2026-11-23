@@ -1,6 +1,0 @@
-# Eine Zeile pro Kanal: @handle oder Kanal-ID (UC…)
-# Alles nach "#" ist Kommentar. Leerzeilen werden ignoriert.
-# Kanal-IDs sind robuster als Handles (Handles können sich ändern).
-
-@mkbhd
-UCBJycsmduvYEL83R_U4JriQ  # Beispiel als ID (gleicher Kanal, wird dedupliziert)
